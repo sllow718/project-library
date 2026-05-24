@@ -2,12 +2,23 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --foreground: #000000;
-  --background: #ffffff;
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
+@keyframes toast-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-toast-in {
+  animation: toast-in 0.25s ease-out;
 }
