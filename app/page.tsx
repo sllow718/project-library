@@ -1,8 +1,20 @@
-export default function Home() {
+import { getLiveProjects } from "@/lib/firebase-admin";
+import PokedexHeader from "@/components/PokedexHeader";
+import { getAllTags } from "@/lib/tag-utils";
+import { IndexContent } from "./IndexContent";
+
+export const revalidate = 3600;
+
+export default async function HomePage() {
+  const projects = await getLiveProjects();
+  const allTags = getAllTags(projects);
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-24">
-      <h1 className="text-4xl font-bold">Project Library</h1>
-      <p className="mt-4 text-lg">Coming soon...</p>
-    </main>
+    <>
+      <PokedexHeader projectCount={projects.length} />
+      <main className="mx-auto max-w-6xl px-4 py-6">
+        <IndexContent projects={projects} allTags={allTags} />
+      </main>
+    </>
   );
 }

@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Project Library",
-  description: "A Pokedex-themed project library",
+  description: "A collection of my deployed web applications",
 };
 
 export default function RootLayout({
@@ -13,7 +13,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body className="bg-[#f8f9fa] text-gray-900 antialiased min-h-screen">
+        {children}
+      </body>
     </html>
   );
 }
