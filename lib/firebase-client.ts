@@ -16,11 +16,25 @@ import type { Project, ProjectFormData } from "./types";
 let app: ReturnType<typeof initializeApp>;
 let db: ReturnType<typeof getFirestore>;
 
+function parseFirebaseConfig(): object {
+  const raw = process.env.NEXT_PUBLIC_FIREBASE_CONFIG;
+  if (!raw) return {};
+  try {
+    return JSON.parse(raw);
+  } catch {
+    // Vercel may double-wrap NEXT_PUBLIC_ values in quotes
+    try {
+      return JSON.parse(JSON.parse(raw));
+    } catch {
+      console.error("Failed to parse NEXT_PUBLIC_FIREBASE_CONFIG:", raw);
+      return {};
+    }
+  }
+}
+
 function getClientApp() {
   if (!app) {
-    const firebaseConfig = JSON.parse(
-      process.env.NEXT_PUBLIC_FIREBASE_CONFIG || "{}"
-    );
+    const firebaseConfig = parseFirebaseConfig();
     app = initializeApp(firebaseConfig);
   }
   return app;
