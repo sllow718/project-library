@@ -59,6 +59,7 @@ export async function saveProject(
 ): Promise<void> {
   const docRef = doc(getProjectsRef(), slug);
   const now = Timestamp.now();
+  const isNew = existingOrder === undefined;
   await setDoc(docRef, {
     title: data.title,
     description: data.description,
@@ -68,10 +69,10 @@ export async function saveProject(
     liveUrl: data.liveUrl,
     repoUrl: data.repoUrl || null,
     status: data.status,
-    order: existingOrder ?? 0,
+    order: isNew ? 0 : existingOrder,
     body: data.body,
     updatedAt: now,
-    createdAt: existingOrder !== undefined ? undefined : now,
+    ...(isNew ? { createdAt: now } : {}),
   }, { merge: true });
 }
 
