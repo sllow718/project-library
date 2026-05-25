@@ -32,7 +32,9 @@ export default async function ProjectPage({
   // Split body into "What it does" and "How to use" sections
   const howToUseMatch = project.body.match(/## How to use[\s\S]*/);
   const whatItDoes = project.body.replace(/## How to use[\s\S]*$/, "").trim();
-  const howToUse = howToUseMatch ? howToUseMatch[0].trim() : "";
+  const howToUseRaw = howToUseMatch ? howToUseMatch[0].trim() : "";
+  // Strip the redundant ## How to use heading since the card already shows it
+  const howToUse = howToUseRaw.replace(/^## How to use\s*\n?/, "").trim();
 
   return (
     <>
