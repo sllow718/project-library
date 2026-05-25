@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useMemo, Component } from "react";
-import ReactMarkdown from "react-markdown";
+import { useState, useMemo } from "react";
 import type { Category } from "@/lib/types";
 import { CATEGORY_COLORS } from "@/lib/types";
 
@@ -18,33 +17,65 @@ interface LivePreviewProps {
   data: PreviewData;
 }
 
-// Catch markdown rendering errors so they don't crash the entire form
-class MarkdownErrorBoundary extends Component<{ children: React.ReactNode }> {
-  state = { error: false };
-  static getDerivedStateFromError() {
-    return { error: true };
-  }
-  render() {
-    if (this.state.error) {
-      return <p className="text-xs text-red-500 italic">Preview unavailable for this content.</p>;
-    }
-    return this.props.children;
-  }
+// Simple markdown-to-text: render bold, headings, and paragraphs without any library
+function PlainPreview({ text }: { text: string }) {
+  const lines = text.split("\n");
+  return (
+    <div className="space-y-1">
+      {lines.map((line, i) => {
+        const trimmed = line.trim();
+        if (!trimmed) return <div key={i} className="h-2" />;
+
+        // Headings
+        if (trimmed.startsWith("## ")) {
+          return (
+            <p key={i} className="text-xs font-bold text-gray-800 mt-2">
+              {trimmed.replace(/^## /, "")}
+            </p>
+          );
+        }
+        if (trimmed.startsWith("### ")) {
+          return (
+            <p key={i} className="text-[11px] font-semibold text-gray-700 mt-1">
+              {trimmed.replace(/^### /, "")}
+            </p>
+          );
+        }
+
+        // Bold markers: **text**
+        const parts = trimmed.split(/(\*\*[^*]+\*\*)/g);
+
+        return (
+          <p key={i} className="text-xs text-gray-600 leading-relaxed">
+            {parts.map((part, j) => {
+              if (part.startsWith("**") && part.endsWith("**")) {
+                return (
+                  <strong key={j} className="text-gray-800">
+                    {part.slice(2, -2)}
+                  </strong>
+                );
+              }
+              return part;
+            })}
+          </p>
+        );
+      })}
+    </div>
+  );
 }
 
 export default function LivePreview({ data }: LivePreviewProps) {
   const [tab, setTab] = useState<"card" | "page">("card");
   const colors = CATEGORY_COLORS[data.category];
 
-  // Memoize derived strings so ReactMarkdown only re-renders when body actually changes
   const whatItDoes = useMemo(() => {
-    if (!data.body) return "*Content preview will appear here as you type...*";
-    return data.body.replace(/## How to use[\s\S]*$/, "").trim() || "*What it does section...*";
+    if (!data.body) return "Content preview will appear here as you type...";
+    return data.body.replace(/## How to use[\s\S]*$/, "").trim() || "What it does section...";
   }, [data.body]);
 
   const howToUse = useMemo(() => {
-    if (!data.body) return "*Add steps in the editor...*";
-    return data.body.match(/## How to use[\s\S]*/)?.[0] || "*Add a ## How to use section...*";
+    if (!data.body) return "Add steps in the editor...";
+    return data.body.match(/## How to use[\s\S]*/)?.[0] || "Add a ## How to use section...";
   }, [data.body]);
 
   return (
@@ -128,20 +159,12 @@ export default function LivePreview({ data }: LivePreviewProps) {
               </div>
             </div>
             <div className="bg-white border border-gray-200 rounded-lg p-3 mb-2">
-              <h3 className="text-xs font-bold text-gray-900 mb-1">● What it does</h3>
-              <div className="text-xs prose prose-sm max-w-none">
-                <MarkdownErrorBoundary>
-                  <ReactMarkdown>{whatItDoes}</ReactMarkdown>
-                </MarkdownErrorBoundary>
-              </div>
+              <h3 className="text-[11px] font-bold text-gray-900 mb-1">● What it does</h3>
+              <PlainPreview text={whatItDoes} />
             </div>
             <div className="bg-white border border-gray-200 rounded-lg p-3">
-              <h3 className="text-xs font-bold text-gray-900 mb-1">● How to use</h3>
-              <div className="text-xs prose prose-sm max-w-none">
-                <MarkdownErrorBoundary>
-                  <ReactMarkdown>{howToUse}</ReactMarkdown>
-                </MarkdownErrorBoundary>
-              </div>
+              <h3 className="text-[11px] font-bold text-gray-900 mb-1">● How to use</h3>
+              <PlainPreview text={howToUse} />
             </div>
           </div>
         )}
