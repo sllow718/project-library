@@ -37,8 +37,8 @@ export function IndexContent({ projects, allTags }: IndexContentProps) {
         <EmptyState activeTags={activeTags} />
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {filteredProjects.map((project) => (
-            <ProjectCard key={project.slug} project={project} index={project.order} />
+          {filteredProjects.map((project, i) => (
+            <ProjectCard key={project.slug} project={project} index={i} />
           ))}
         </div>
       )}
