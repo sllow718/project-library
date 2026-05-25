@@ -25,24 +25,33 @@ const app = getAdminApp();
 const db = getFirestore(app);
 const projectsRef = db.collection("projects");
 
+// Firestore Admin SDK returns Timestamp instances, which Next.js can't serialize
+// to client components. Convert them to plain objects.
+function serializeProject(doc: FirebaseFirestore.DocumentSnapshot): Project {
+  const data = doc.data()!;
+  return {
+    slug: doc.id,
+    ...data,
+    createdAt: data.createdAt ? { seconds: data.createdAt.seconds, nanoseconds: data.createdAt.nanoseconds } : { seconds: 0, nanoseconds: 0 },
+    updatedAt: data.updatedAt ? { seconds: data.updatedAt.seconds, nanoseconds: data.updatedAt.nanoseconds } : { seconds: 0, nanoseconds: 0 },
+  } as Project;
+}
+
 export async function getLiveProjects(): Promise<Project[]> {
   const snapshot = await projectsRef
     .where("status", "==", "live")
     .orderBy("order", "asc")
     .get();
 
-  return snapshot.docs.map((doc) => ({
-    slug: doc.id,
-    ...doc.data(),
-  })) as Project[];
+  return snapshot.docs.map(serializeProject);
 }
 
 export async function getLiveProjectBySlug(slug: string): Promise<Project | null> {
   const doc = await projectsRef.doc(slug).get();
   if (!doc.exists) return null;
-  const data = doc.data() as Omit<Project, "slug">;
-  if (data.status !== "live") return null;
-  return { slug: doc.id, ...data } as Project;
+  const project = serializeProject(doc);
+  if (project.status !== "live") return null;
+  return project;
 }
 
 export async function getAllProjectSlugs(): Promise<string[]> {
@@ -52,8 +61,5 @@ export async function getAllProjectSlugs(): Promise<string[]> {
 
 export async function getAllProjects(): Promise<Project[]> {
   const snapshot = await projectsRef.orderBy("order", "asc").get();
-  return snapshot.docs.map((doc) => ({
-    slug: doc.id,
-    ...doc.data(),
-  })) as Project[];
+  return snapshot.docs.map(serializeProject);
 }
