@@ -3,7 +3,6 @@ import { getLiveProjectBySlug, getLiveProjects } from "@/lib/firebase-admin";
 import PokedexHeader from "@/components/PokedexHeader";
 import ProjectHero from "@/components/ProjectHero";
 import MDXContent from "@/components/MDXContent";
-import HowToSteps from "@/components/HowToSteps";
 import ProjectNav from "@/components/ProjectNav";
 import Link from "next/link";
 
@@ -12,26 +11,6 @@ export const revalidate = 3600;
 export async function generateStaticParams() {
   const projects = await getLiveProjects();
   return projects.map((p) => ({ slug: p.slug }));
-}
-
-function parseHowToSteps(body: string): { title: string; description: string }[] {
-  const howToMatch = body.match(/## How to use\s*\n([\s\S]*?)(?=\n## |$)/);
-  if (!howToMatch) return [];
-
-  const steps: { title: string; description: string }[] = [];
-  const lines = howToMatch[1].trim().split("\n");
-
-  for (const line of lines) {
-    const match = line.match(/^\d+\.\s+\*\*(.+?)\*\*\s*(—|–|-)?\s*(.*)/);
-    if (match) {
-      steps.push({
-        title: match[1].trim(),
-        description: match[3]?.trim() || "",
-      });
-    }
-  }
-
-  return steps;
 }
 
 export default async function ProjectPage({
@@ -50,7 +29,10 @@ export default async function ProjectPage({
   const prev = allProjects.length > 1 ? allProjects[prevIndex] : null;
   const next = allProjects.length > 1 ? allProjects[nextIndex] : null;
 
-  const steps = parseHowToSteps(project.body);
+  // Split body into "What it does" and "How to use" sections
+  const howToUseMatch = project.body.match(/## How to use[\s\S]*/);
+  const whatItDoes = project.body.replace(/## How to use[\s\S]*$/, "").trim();
+  const howToUse = howToUseMatch ? howToUseMatch[0].trim() : "";
 
   return (
     <>
@@ -67,17 +49,17 @@ export default async function ProjectPage({
             <span className="text-[#dc2626]">●</span> What it does
           </h2>
           <div className="mt-3">
-            <MDXContent content={project.body.replace(/## How to use[\s\S]*$/, "").trim()} />
+            <MDXContent content={whatItDoes || "No description provided."} />
           </div>
         </section>
 
-        {steps.length > 0 && (
+        {howToUse && (
           <section className="bg-white border-2 border-gray-200 rounded-xl p-5 mb-4">
             <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
               <span className="text-[#dc2626]">●</span> How to use
             </h2>
             <div className="mt-3">
-              <HowToSteps steps={steps} />
+              <MDXContent content={howToUse} />
             </div>
           </section>
         )}
