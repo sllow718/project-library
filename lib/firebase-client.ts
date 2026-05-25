@@ -13,22 +13,32 @@ import {
 } from "firebase/firestore";
 import type { Project, ProjectFormData } from "./types";
 
+let app: ReturnType<typeof initializeApp>;
+let db: ReturnType<typeof getFirestore>;
+
 function getClientApp() {
-  if (getApps().length > 0) return getApps()[0];
-
-  const firebaseConfig = JSON.parse(
-    process.env.NEXT_PUBLIC_FIREBASE_CONFIG || "{}"
-  );
-
-  return initializeApp(firebaseConfig);
+  if (!app) {
+    const firebaseConfig = JSON.parse(
+      process.env.NEXT_PUBLIC_FIREBASE_CONFIG || "{}"
+    );
+    app = initializeApp(firebaseConfig);
+  }
+  return app;
 }
 
-const app = getClientApp();
-const db = getFirestore(app);
-const projectsRef = collection(db, "projects");
+function getDb() {
+  if (!db) {
+    db = getFirestore(getClientApp());
+  }
+  return db;
+}
+
+function getProjectsRef() {
+  return collection(getDb(), "projects");
+}
 
 export async function fetchAllProjects(): Promise<Project[]> {
-  const q = query(projectsRef, orderBy("order", "asc"));
+  const q = query(getProjectsRef(), orderBy("order", "asc"));
   const snapshot = await getDocs(q);
   return snapshot.docs.map((doc) => ({
     slug: doc.id,
@@ -41,7 +51,7 @@ export async function saveProject(
   data: ProjectFormData,
   existingOrder?: number
 ): Promise<void> {
-  const docRef = doc(projectsRef, slug);
+  const docRef = doc(getProjectsRef(), slug);
   const now = Timestamp.now();
   await setDoc(docRef, {
     title: data.title,
@@ -60,16 +70,16 @@ export async function saveProject(
 }
 
 export async function deleteProject(slug: string): Promise<void> {
-  await deleteDoc(doc(projectsRef, slug));
+  await deleteDoc(doc(getProjectsRef(), slug));
 }
 
 export async function updateProjectOrder(
   orderUpdates: { slug: string; order: number }[]
 ): Promise<void> {
-  const batch = writeBatch(db);
+  const batch = writeBatch(getDb());
   const now = Timestamp.now();
   for (const { slug, order } of orderUpdates) {
-    batch.update(doc(projectsRef, slug), { order, updatedAt: now });
+    batch.update(doc(getProjectsRef(), slug), { order, updatedAt: now });
   }
   await batch.commit();
 }
