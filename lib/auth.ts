@@ -6,8 +6,14 @@ export interface SessionData {
   isAuthenticated: boolean;
 }
 
+// iron-session requires ≥32 characters. Use a dedicated secret, not the admin password.
+const SESSION_SECRET =
+  process.env.SESSION_SECRET ||
+  process.env.ADMIN_PASSWORD ||
+  "fallback-dev-password-at-least-32-characters!!";
+
 export const sessionOptions: SessionOptions = {
-  password: process.env.ADMIN_PASSWORD || "fallback-dev-password-at-least-32-characters!!",
+  password: SESSION_SECRET.length >= 32 ? SESSION_SECRET : SESSION_SECRET.padEnd(32, "0"),
   cookieName: "project-library-admin",
   cookieOptions: {
     httpOnly: true,
