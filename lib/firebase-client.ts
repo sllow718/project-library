@@ -16,25 +16,17 @@ import type { Project, ProjectFormData } from "./types";
 let app: ReturnType<typeof initializeApp>;
 let db: ReturnType<typeof getFirestore>;
 
-function parseFirebaseConfig(): object {
-  const raw = process.env.NEXT_PUBLIC_FIREBASE_CONFIG;
-  if (!raw) return {};
-  try {
-    return JSON.parse(raw);
-  } catch {
-    // Vercel may double-wrap NEXT_PUBLIC_ values in quotes
-    try {
-      return JSON.parse(JSON.parse(raw));
-    } catch {
-      console.error("Failed to parse NEXT_PUBLIC_FIREBASE_CONFIG:", raw);
-      return {};
-    }
-  }
-}
+const firebaseConfig = {
+  apiKey: "AIzaSyAY6dTA-5XRqM48UoklwPVfL4_WymGtYpo",
+  authDomain: "project-library-tp.firebaseapp.com",
+  projectId: "project-library-tp",
+  storageBucket: "project-library-tp.firebasestorage.app",
+  messagingSenderId: "144417859062",
+  appId: "1:144417859062:web:edec49fcaca9fbf12353d7",
+};
 
 function getClientApp() {
   if (!app) {
-    const firebaseConfig = parseFirebaseConfig();
     app = initializeApp(firebaseConfig);
   }
   return app;
