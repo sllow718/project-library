@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, Component } from "react";
 import ReactMarkdown from "react-markdown";
 import type { Category } from "@/lib/types";
 import { CATEGORY_COLORS } from "@/lib/types";
@@ -18,14 +18,40 @@ interface LivePreviewProps {
   data: PreviewData;
 }
 
+// Catch markdown rendering errors so they don't crash the entire form
+class MarkdownErrorBoundary extends Component<{ children: React.ReactNode }> {
+  state = { error: false };
+  static getDerivedStateFromError() {
+    return { error: true };
+  }
+  render() {
+    if (this.state.error) {
+      return <p className="text-xs text-red-500 italic">Preview unavailable for this content.</p>;
+    }
+    return this.props.children;
+  }
+}
+
 export default function LivePreview({ data }: LivePreviewProps) {
   const [tab, setTab] = useState<"card" | "page">("card");
   const colors = CATEGORY_COLORS[data.category];
 
+  // Memoize derived strings so ReactMarkdown only re-renders when body actually changes
+  const whatItDoes = useMemo(() => {
+    if (!data.body) return "*Content preview will appear here as you type...*";
+    return data.body.replace(/## How to use[\s\S]*$/, "").trim() || "*What it does section...*";
+  }, [data.body]);
+
+  const howToUse = useMemo(() => {
+    if (!data.body) return "*Add steps in the editor...*";
+    return data.body.match(/## How to use[\s\S]*/)?.[0] || "*Add a ## How to use section...*";
+  }, [data.body]);
+
   return (
     <div className="bg-white rounded-xl border-2 border-gray-200 overflow-hidden h-full flex flex-col">
-      <div className="flex border-b border-gray-200">
+      <div className="flex border-b border-gray-200 shrink-0">
         <button
+          type="button"
           onClick={() => setTab("card")}
           className={`flex-1 py-2.5 text-xs font-semibold transition-colors ${
             tab === "card"
@@ -36,6 +62,7 @@ export default function LivePreview({ data }: LivePreviewProps) {
           Card Preview
         </button>
         <button
+          type="button"
           onClick={() => setTab("page")}
           className={`flex-1 py-2.5 text-xs font-semibold transition-colors ${
             tab === "page"
@@ -103,19 +130,17 @@ export default function LivePreview({ data }: LivePreviewProps) {
             <div className="bg-white border border-gray-200 rounded-lg p-3 mb-2">
               <h3 className="text-xs font-bold text-gray-900 mb-1">● What it does</h3>
               <div className="text-xs prose prose-sm max-w-none">
-                <ReactMarkdown>
-                  {data.body
-                    ? data.body.replace(/## How to use[\s\S]*$/, "").trim()
-                    : "*Content preview will appear here as you type...*"}
-                </ReactMarkdown>
+                <MarkdownErrorBoundary>
+                  <ReactMarkdown>{whatItDoes}</ReactMarkdown>
+                </MarkdownErrorBoundary>
               </div>
             </div>
             <div className="bg-white border border-gray-200 rounded-lg p-3">
               <h3 className="text-xs font-bold text-gray-900 mb-1">● How to use</h3>
               <div className="text-xs prose prose-sm max-w-none">
-                <ReactMarkdown>
-                  {data.body.match(/## How to use[\s\S]*/)?.[0] || "*Add steps in the editor...*"}
-                </ReactMarkdown>
+                <MarkdownErrorBoundary>
+                  <ReactMarkdown>{howToUse}</ReactMarkdown>
+                </MarkdownErrorBoundary>
               </div>
             </div>
           </div>
