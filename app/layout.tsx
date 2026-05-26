@@ -4,6 +4,10 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Project Library",
   description: "A collection of my deployed web applications",
+  icons: {
+    icon: "/images/188987.png",
+    apple: "/images/188987.png",
+  },
 };
 
 export default function RootLayout({
